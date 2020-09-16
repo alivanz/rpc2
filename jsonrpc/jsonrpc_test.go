@@ -1,10 +1,11 @@
 package jsonrpc
 
 import (
-	"github.com/cenkalti/rpc2"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/alivanz/rpc2"
 )
 
 const (

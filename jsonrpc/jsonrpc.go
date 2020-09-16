@@ -21,7 +21,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/cenkalti/rpc2"
+	"github.com/alivanz/rpc2"
 )
 
 type jsonCodec struct {
@@ -83,9 +83,9 @@ type serverResponse struct {
 	Error  interface{}      `json:"error"`
 }
 type clientRequest struct {
-	Method string        `json:"method"`
-	Params []interface{} `json:"params"`
-	Id     *uint64       `json:"id"`
+	Method string      `json:"method"`
+	Params interface{} `json:"params"`
+	Id     *uint64     `json:"id"`
 }
 
 func (c *jsonCodec) ReadHeader(req *rpc2.Request, resp *rpc2.Response) error {
@@ -127,14 +127,14 @@ func (c *jsonCodec) ReadHeader(req *rpc2.Request, resp *rpc2.Response) error {
 		resp.Error = ""
 		resp.Seq = c.clientResponse.Id
 		if c.clientResponse.Error != nil || c.clientResponse.Result == nil {
-			x, ok := c.clientResponse.Error.(string)
-			if !ok {
-				return fmt.Errorf("invalid error %v", c.clientResponse.Error)
-			}
-			if x == "" {
-				x = "unspecified error"
-			}
-			resp.Error = x
+			// x, ok := c.clientResponse.Error.(string)
+			// if !ok {
+			// 	return fmt.Errorf("invalid error %v", c.clientResponse.Error)
+			// }
+			// if x == "" {
+			// 	x = "unspecified error"
+			// }
+			resp.Error = fmt.Sprint(c.clientResponse.Error)
 		}
 	}
 	return nil
@@ -149,14 +149,7 @@ func (c *jsonCodec) ReadRequestBody(x interface{}) error {
 	if c.serverRequest.Params == nil {
 		return errMissingParams
 	}
-	var params *[]interface{}
-	switch x := x.(type) {
-	case *[]interface{}:
-		params = x
-	default:
-		params = &[]interface{}{x}
-	}
-	return json.Unmarshal(*c.serverRequest.Params, params)
+	return json.Unmarshal(*c.serverRequest.Params, x)
 }
 
 func (c *jsonCodec) ReadResponseBody(x interface{}) error {
@@ -167,13 +160,7 @@ func (c *jsonCodec) ReadResponseBody(x interface{}) error {
 }
 
 func (c *jsonCodec) WriteRequest(r *rpc2.Request, param interface{}) error {
-	req := &clientRequest{Method: r.Method}
-	switch param := param.(type) {
-	case []interface{}:
-		req.Params = param
-	default:
-		req.Params = []interface{}{param}
-	}
+	req := &clientRequest{Method: r.Method, Params: param}
 	if r.Seq == 0 {
 		// Notification
 		req.Id = nil
